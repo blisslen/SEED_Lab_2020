@@ -1,0 +1,335 @@
+Questions:
+
+1. An openCV image is stored as a 3 dimensional numpy array of integers, with the first index determinining the y coordinate of the 3d array, the 2nd index the x coordinate of the array, and the 3rd index the particular color to check at that position in the image.
+2.image.shape returns a tuple (w,h,c) which holds the width and heighth, and color depth of the image stored.
+3.The parameters fx and fy refer to the scale factors which will be applied to the width (fx) and height (fy) of the image resized.
+4. It would change the point around which the image would be rotated (if the rotation matrix was applied afterwards) from the center of the image (w/2, h/2) to a point a quarter of the way into the image with respect to both height and width.
+5.cv2.warpAffine must be called after, with the image, the transformation matrix, and the new dimensions of the transformed image in a tuple (w,h), in that order.
+6.The upper and lower bounds for the three values determine 3 different things, in the HSV color space. By bounding the hue value, we are are bounding the colors which can be picked, to those which are approximately yellow, since hue determines the color of the output. Saturation determines the "lightness" of the color, or it's distance from the color white. Value determines the "darkness" of the color, or its distance from the color black.
+7. Aruco marker detection is far more advanced than the color detection that we performed in that it determines markers through both color and shape detection. The large black border around the marker assists discovering potential markers, with additional processing being performed to determine if the shape, and inner contents of the marker candidate are valid.
+8. The ids returned with 2 markers detected is a 1x2 numpy array, which is an array containing an array of id's found.
+  The markers returned with 2 markers detected is a list of lenght 2 containing a 2x4x2 numpy array (2 sets of 4 points with 2 coordinates each, making the corners of both markers), as well as the number format of that numpy array.
+9. The parameter "minMarkerPerimeterRate" controls the minimum marker contour which can be detected (as a percentage of the resolution of the image taken), which could make it so all markers which are detected need to be sufficiently large (at least in the persepctive of the image), to be recorded. 
+
+Code:
+
+"""
+SEED Lab Assignment 2, Computer Vision
+======================================
+
+This segment of code completes the tasks set forth in SEED Lab's
+Assignment 1, Computer Vision Module.
+
+This code can run a series of functions which experiment with the capabilities
+of the computer vision (CV2) libraries, along with aruco marker detection, using
+photos taken from a raspberry pi computer.
+
+Look how easy it is to use:
+
+    Ensure all required libraries are installed.
+    Ensure code is being ran on a raspberry pi, with camera module installed.
+    Execute the code in idle/spyder/terminal/etc.
+    
+Features
+--------
+
+- Solves the problems
+- Gets me credit for doing the assignment in the class
+- Use of computervision library to detect markers, which will be useful for further projcets
+
+Author
+------
+
+Hunter Bliss
+SEED Lab
+Team 1
+Section A
+
+Updates:
+--------
+Last Updated: 2/07/2020
+
+"""
+
+# import the necessary packages
+from picamera.array import PiRGBArray
+from picamera import PiCamera
+import time
+import cv2
+import cv2.aruco as aruco
+import numpy as np
+from math import floor
+
+#function takes a picture using the pi's camera, and returns an opencv workable image array.
+#Option to use cached photo from file location (if cameraWorks = false)
+#Option to save taken photo to file location (if saveFile = true)
+
+def takePic(cameraWorks, saveFile, fileLoc):
+  #Use the camera if it works
+  if(cameraWorks):
+    camera = PiCamera();
+    rawCapture = PiRGBArray(camera);
+    time.sleep(0.1);
+    #Initialize the camera for capture
+    
+    print("Capturing Image...")
+    try:
+      camera.capture(rawCapture, format="bgr");
+      image = rawCapture.array;
+      camera.close();
+    except:
+      print("Failed to capture");
+    #take a photo using the camera  
+    
+    if(saveFile):
+      print("Saving image "+fileLoc);
+      try:
+        cv2.imwrite(fileLoc, image);
+      except:
+        print("Failed to save.");
+    #attempt to save the photo, if enabled.
+    
+    return image
+  
+  #if camera doesn't work, used cached version:
+  else:
+    print("Reading cached image...");
+    image = cv2.imread(fileLoc, cv2.IMREAD_UNCHANGED);
+    return image;
+
+
+#Global variables for the click capture callback function
+clickPoint = [];
+pressed = False;
+
+
+#Click capture callback function to enable mouse control for part 2.
+def clickCap(event, x, y, flags, params):
+  global clickPoint;
+  global pressed;
+  if event == cv2.EVENT_LBUTTONDOWN:
+    clickPoint = (x,y);
+    pressed = True;
+    #Set a flag and record a point when a click is detected.
+
+#Part one run function, takes a photo and scales an image down to half it's original resolution.
+def part1(cameraWorks):
+  img = takePic(cameraWorks, True, "Live/shrek.png");
+  #Filename hardcoded for cached test image.
+  
+  print("Original dimensions : ",img.shape);
+  scale_percent = 50 # percent of original size
+  width = int(img.shape[1] * scale_percent / 100);
+  height = int(img.shape[0] * scale_percent / 100);
+  dim = (width, height);
+  #Setup transformation parameters
+  
+  scaled = cv2.resize(img,dim, interpolation=cv2.INTER_AREA);
+  #Transform.
+  
+  print("Resized dimensions : ",scaled.shape);
+  cv2.imshow("Resized", scaled);
+  cv2.waitKey(60000);
+  cv2.destroyAllWindows();
+  #Display transformed image, and wait for a keypress (or 60 seconds) to close window
+  return scaled;
+
+
+#Function for part 2. Takes a picture, and allows the user to click on it to display the color values there.
+def part2(cameraWorks):
+  img = takePic(cameraWorks, False, "Cached/shrek.png");
+  #Filename hardcoded for cached test image.
+  
+  ref = img;
+  #Copy of image to use for pixel color discovery, since HSV images can't be displayed normally.
+  
+  while True:
+    useBGR = input("Would you like to use BGR or HSV colors?");
+    if(useBGR == "bgr" or useBGR == "BGR"):
+      break;
+    elif(useBGR == "HSV" or useBGR == "hsv"):
+      ref = cv2.cvtColor(img,cv2.COLOR_BGR2HSV);
+      break;
+    else:
+      print("Invalid input.");
+  #Check the color space the user wants their colors returned in.
+  
+  cv2.namedWindow("image");
+  cv2.setMouseCallback("image", clickCap); 
+  #Hook the mouse capture function into the window
+  
+  print("click on a pixel of the image shown to see its color values.");
+  while True:
+    cv2.imshow("image",img);
+    cv2.waitKey(1);
+    #Repeatedly display the window, while still allowing any keypress to close it.
+    if(pressed):
+      print(ref[clickPoint[1],clickPoint[0]]);
+      break;
+      #Print the colors at a given point when a click is detected, and then close the image's window.
+      
+  cv2.destroyAllWindows();
+  
+  return;
+    
+#Function for part 3. Takes a picture, and displays it in greyscale.
+def part3(cameraWorks):
+  img = takePic(cameraWorks, False, "Cached/shrek.png");
+  #Filename hardcoded for cached test image.
+  
+  newColor = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY);
+  cv2.imshow("Grayscale", newColor);
+  cv2.waitKey(60000);
+  cv2.destroyAllWindows();
+  #Convert to greyscale and display.
+  return;
+
+#Function for part 4. Takes a picture, filters it to only the color yellow, and displays the two
+#side-by-side.
+def part4(cameraWorks):
+  img = takePic(cameraWorks, False, "Cached/yellow_slide2.png");
+  #Filename hardcoded for cached test image.
+  
+  if(not cameraWorks):
+    scale_percent = 20 # percent of original size
+    width = int(img.shape[1] * scale_percent / 100);
+    height = int(img.shape[0] * scale_percent / 100);
+    dim = (width, height);
+    img = cv2.resize(img,dim, interpolation=cv2.INTER_AREA);
+    #Do some scaling for the cached test image, since the cached photo was too large to work with
+    #at a reasonable speed.
+  
+  yellow = np.uint8([[[0,255,255]]]);
+  hsv_yellow = cv2.cvtColor(yellow,cv2.COLOR_BGR2HSV);
+  hsv_yellow_hue = hsv_yellow[0,0,0];
+  #Convert from an BGR yellow to an HSV yellow to use to filter to just yellow.
+  
+  boundaries = [([hsv_yellow_hue - 15,100,100],[hsv_yellow_hue + 15,255,255])];
+  #Use the HSV yellow to determine ranges for yellow detection.
+  
+  hsv_img = cv2.cvtColor(img,cv2.COLOR_BGR2HSV);
+  #Convert the image to HSV for detection.
+  
+  for (lower, upper) in boundaries:
+    lower = np.array(lower, dtype = "uint8");
+    upper = np.array(upper, dtype = "uint8");
+    mask = cv2.inRange(hsv_img, lower, upper);
+    output = cv2.bitwise_and(img, img, mask = mask);
+    #Filter an image down to only the yellow parts of the taken photo
+    
+    cv2.imshow("Only Yellow", np.hstack([img, output]));
+    cv2.waitKey(60000);
+    cv2.destroyAllWindows();
+    #Display the results side-by-side
+  return;
+ 
+#Function for part 6. Takes a photo, detects standard aruco markers, and displays their IDs. 
+def part5(cameraWorks):
+  print("Testing image for markers...");
+  img = takePic(cameraWorks, False, "Cached/Both.jpg");
+  #Filename hardcoded for cached test image.
+  
+  if(not cameraWorks):
+    scale_percent = 20 # percent of original size
+    width = int(img.shape[1] * scale_percent / 100);
+    height = int(img.shape[0] * scale_percent / 100);
+    dim = (width, height);
+    img = cv2.resize(img,dim, interpolation=cv2.INTER_AREA);
+    #Do some scaling for the cached test image, since the cached photo was too large to work with
+    #at a reasonable speed
+  
+  img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY);
+  #Convert to greyscale for marker detection
+  
+  aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250);
+  parameters = aruco.DetectorParameters_create();
+  #Initialize elements needed for aruco marker detection.
+  
+  corners, ids, rejectedImgPoints = aruco.detectMarkers(img, aruco_dict, parameters = parameters);
+  #Detect markers
+
+  try:
+        print("Detected markers with ID's : ",ids[:,0]);
+  except:
+        print("No IDs detected.");
+  #Printout IDs
+  
+  return;
+
+  
+#Function for part 6, which takes successive photos, searching each for aruco markers, displaying their IDs
+def part6(cameraWorks):
+  print("Testing feed for markers...");
+  print("Press any key to stop.");
+  
+  frame = 0;
+  files = ["Cached/Just1.jpg","Cached/Just2.jpg","Cached/Both.jpg"];
+  #Logic items for simulated photo switching, just using cached photos
+  
+  aruco_dict = aruco.Dictionary_get(aruco.DICT_6X6_250);
+  parameters = aruco.DetectorParameters_create();
+  #Initialize elements needed for aruco marker detection.
+  
+  while True:
+    img = takePic(cameraWorks, False, files[floor(frame / 5.0) % 3]);
+    #Logic for selecting which cached photo to use
+    
+    if(not cameraWorks):
+      scale_percent = 20 # percent of original size
+      width = int(img.shape[1] * scale_percent / 100);
+      height = int(img.shape[0] * scale_percent / 100);
+      dim = (width, height);
+      img = cv2.resize(img,dim, interpolation=cv2.INTER_AREA);
+      frame = frame + 1;
+      #Do some scaling for the cached test image, since the cached photo was too large to work with
+      #at a reasonable speed
+      
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY);
+    corners, ids, rejectedImgPoints = aruco.detectMarkers(img, aruco_dict, parameters = parameters);
+    #Convert to greyscale, and dectect markers.
+    
+    cv2.imshow("Markers detected",img);
+    #Display the current picture taken, creating a sort of "video feed"
+    
+    try:
+        print("Detected markers with ID's : ",ids[:,0]);
+    except:
+        print("No IDs detected.");
+    #Display detected IDs
+    
+    if(cv2.waitKey(1) > 0):
+      break;
+      #Exit function on keypress
+  cv2.destroyAllWindows();
+  return;
+
+funcDict = {"1":part1, "2":part2, "3":part3, "4":part4, "5":part5, "6":part6};
+#Dict converting user entered numbers into the functions to call
+
+while True:
+  userInp = input("Please enter the part of this assignment you'd like to demo. (1-6), or exit to exit.");
+  if userInp == "exit":
+    break;
+    #Exit at user's decision
+    
+  elif(funcDict.get(userInp) != None):
+    #See if the entered text has a function associated with it in our dictionary
+    
+    cameraWorks = False;
+    while True:
+      cameraState = input("Does your camera work yet? (y/n)");
+      if(cameraState == "y" or cameraState == "Y"):
+        cameraWorks = True;
+        break;
+      elif(cameraState == "n" or cameraState == "N"):
+        cameraWorks = False;
+        break;
+      else:
+        printf("Invalid input. Try again.");
+    #Allow for choosing whether or not to use cached photos, by selecting whether your camera works or not.
+    
+    funcDict[userInp](cameraWorks);
+    #Call the function from the dictionary
+    
+  else:
+    print("Not a valid input. Try again.");
