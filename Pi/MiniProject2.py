@@ -7,6 +7,10 @@ import cv2.aruco as aruco
 import numpy as np
 from math import floor
 from datetime import datetime as dt
+import smbus
+import adafruit_character_lcd.character_lcd_rgb_i2c
+import busio
+import board
 
 def takePic(saveFile, fileLoc):
     camera = PiCamera();
@@ -53,6 +57,8 @@ displayPics = False;
 showMarkersInDisplay = False;
 printoutMarkers = True;
 
+myAddr = 0x45;
+
 """
 
 MAIN LOGIC LOOP
@@ -67,6 +73,8 @@ while True:
     #Probably don't need to greyscale it, idk why tf they made us in the assignment
     
     corners, ids, rejectedImgPoints = aruco.detectMarkers(pic, aruco_dict, parameters = parameters);
+    centers = getCenters(corners);
+    if(not ids is None):
     
     try:
         pass;
@@ -85,7 +93,6 @@ while True:
     if(printoutMarkers):
         #try:
         if(not ids is None):
-            centers = getCenters(corners);
             print(centers);
             print("Detected markers with ID's : ",ids[:,0]);
         #except:
