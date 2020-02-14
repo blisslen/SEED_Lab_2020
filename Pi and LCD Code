@@ -1,0 +1,95 @@
+# Assignment 2 Seed Lab Pi code 
+# Interface between Arduino,Pi, and Digital Display 
+# Made by Dat Truong 
+ 
+#imports needed to interface between the arduino, pi, and display 
+import smbus 
+import timea 
+import board 
+import busio 
+import adafruit_character_lcd.character_lcd_rgb_i2c as character_lcd 
+ 
+# Modify this if you have a different sized Character LCD 
+lcd_columns = 16 
+lcd_rows = 2 
+ 
+# Initialise I2C bus. 
+i2c = busio.I2C(board.SCL, board.SDA) 
+ 
+# Initialise the LCD class 
+lcd = character_lcd.Character_LCD_RGB_I2C(i2c, lcd_columns, lcd_rows) 
+ 
+# for RPI version 1, use “bus = smbus.SMBus(0)” 
+bus = smbus.SMBus(1) 
+ 
+# This is the address we setup in the Arduino Program 
+address = 0x04 
+ 
+#function to write a value to a certain address 
+def writeNumber(value):     
+	bus.write_byte(address, value) 
+# bus.write_byte_data(address, 0, value)     
+	return -1 
+ 
+#function to read a value from an address 
+def readNumber():     
+	try:         
+		number = bus.read_byte(address)         
+		# number = bus.read_byte_data(address, 1)         
+		return number     
+		#when a cable gets disconnected, it will display an IO error 
+    except IOError:         
+		print ("P-please put it b-back in, Sempai!")         
+		lcd.message = str("Error 404 ~ UwU")[::-1] 
+ 
+#function to write a string to an array block 
+def writeBlock(inputString):     
+	listAscii = []     
+	for x in inputString:         
+		listAscii.append(ord(x))     
+	bus.write_i2c_block_data(address, 0, listAscii)   
+	
+	#function to read the data from a block from a certain address 
+	def readBlock():     
+		data = bus.read_i2c_block_data(address, 0, 32)     
+		return data 
+		
+#main loop 
+while True:     
+	#getting user input     
+	var = input("Enter a number between 1 & 9:")     
+	var = int(var)     
+	if not var:         
+		continue     
+	#using the writeNumber function to send the user input to the arduino
+	writeNumber(var)     
+	print ("RPI: Hi Arduino, I sent you ", var)     
+	# sleep one second     
+	time.sleep(1)     
+	#gets the number from the arduino and prints the number     
+	number = readNumber()     
+	print ("Arduino: Hey RPI, I received your number and added 5 to equal =", number)     
+	print()       
+	#prints the number receive from arduino on the display     
+	lcd.clear()     
+	lcd.message = str(var) + " plus 5 = " + str(number)       
+	#has the user input a string     
+	var = input("Enter a string")     
+	if not var:         
+		continue     
+	#uses the writeBlock function to send to arduino and then prints back what the arduino sent     
+	writeBlock(var)     
+	data = readBlock(); 
+    for x in data:        
+		if (x is not 0):            
+			print (chr(x))       
+	#voltage reading from the arduino is shown on the display     
+	gotNumber = readNumber()    
+	if (gotNumber == None):        
+		gotNumber = 0     
+	lcd.color = [50, 0, 50]    
+	time.sleep(1)  
+	lcd.clear()   
+	# Print two line message right to left     
+	lcd.text_direction = lcd.RIGHT_TO_LEFT    
+	lcd.message = str("Voltage is:" + str(round(gotNumber*5/127)))[::-1] 
