@@ -15,6 +15,10 @@ int startingTime;
 int period = 5;
 double currTime = 0;
 double voltageCommand, destRads, integral = 0;
+double VCC = 5;
+double PControl = .6512;
+double IControl = PControl * .1508;
+double pi = 3.14159;
 
 bool turnUp = false;
 
@@ -43,17 +47,23 @@ void setup() {
 
 void loop() {
   currTime = millis();
+  if (currTime < 3000){
+    destRads = pi / 2;
+  } else if (currTime < 6000){
+    destRads = pi;
+  } else if (currTime < 9000){
+    destRads = 3 * pi / 2;
+  } else {
+    destRads = 2 * pi;
+  }
   
   currPosition = count / CPR * 2 * 3.14159; //Current Position in radians
   currVel = (currPosition - lastPosition) / ((currTime - lastTime)/1000) ; //Velocity in rad/sec
   lastPosition = currPosition;
-
   integral += ((currTime - lastTime) / 1000) * (destRads - currPosition) ;
-
-  voltageCommand = (destRads - currPosition) * .32007 + integral * 0.01120245;
-  
-  Serial.print(voltageCommand);
-  Serial.print("\t");
+  voltageCommand = (destRads - currPosition) * PControl + integral * IControl;
+  if (voltageCommand > 5) voltageCommand = 5;
+  if (voltageCommand <-5) voltageCommand = -5;
   
   if (voltageCommand < 0){
     digitalWrite(M1DIR, LOW);
@@ -62,23 +72,17 @@ void loop() {
     digitalWrite(M1DIR, HIGH);
   }
 
-  //analogWrite(MOTOR1, voltageCommand * CYCLE);
+
+  Serial.print("Destination (radians): ");
+  Serial.print(destRads);
+  Serial.print("\t Voltage Command (0-1): ");
+  Serial.print(voltageCommand / VCC);
+  Serial.print("\n");
   
-  if (currTime - startingTime < 2000 && currTime - startingTime > 1000){
-    Serial.print(currPosition);
-    Serial.print("\t");
-    Serial.print(currVel);
-    Serial.print("\t");
-    Serial.print(currTime);
-    Serial.print("\t");
-    Serial.print(voltageCommand);
-    Serial.print("\n");
-  }
-  
-  //Serial.print(count);
+  analogWrite(MOTOR1, voltageCommand / VCC * CYCLE);
   
   while (millis() < currTime + period);  //Sample every 5ms
-    
+ 
   lastTime = currTime;
 }
   
