@@ -8,9 +8,34 @@ import numpy as np
 from math import floor
 from datetime import datetime as dt
 import smbus
-import adafruit_character_lcd.character_lcd_rgb_i2c
 import busio
 import board
+import adafruit_character_lcd.character_lcd_rgb_i2c as character_lcd
+
+#function to read a value from an address 
+def readNumber():     
+	try:         
+		number = bus.read_byte(address)         
+		# number = bus.read_byte_data(address, 1)         
+		return number     
+		#when a cable gets disconnected, it will display an IO error 
+    except IOError:         
+		print ("P-please put it b-back in, Sempai!")         
+		lcd.message = str("Error 404 ~ UwU")[::-1] 
+
+"""
+#function to write a string to an array block 
+def writeBlock(inputString):     
+	listAscii = []     
+	for x in inputString:         
+		listAscii.append(ord(x))     
+	  
+	
+#function to read the data from a block from a certain address 
+def readBlock():     
+    data = bus.read_i2c_block_data(address, 0, 32)     
+    return data 
+"""
 
 def takePic(saveFile, fileLoc):
     camera = PiCamera();
@@ -59,6 +84,19 @@ printoutMarkers = True;
 
 myAddr = 0x45;
 
+# Modify this if you have a different sized Character LCD
+lcd_columns = 16
+lcd_rows = 2
+
+# Initialise I2C bus.
+i2c = busio.I2C(board.SCL, board.SDA)
+
+# Initialise the LCD class
+lcd = character_lcd.Character_LCD_RGB_I2C(i2c, lcd_columns, lcd_rows)
+
+# Print two line message right to left
+lcd.text_direction = lcd.RIGHT_TO_LEFT
+
 """
 
 MAIN LOGIC LOOP
@@ -100,18 +138,32 @@ while True:
     (w,h) = pic.shape();
     if(centers[0][0] < w/2 and centers[0][1] < h/2):
         #TOP LEFT? IDK, near 0,0, which could be top or bottom left depending on their convention
+        #set to 0 rads
+        bus.write_i2c_block_data(address, 0, listAscii) 
         pass;
     elif(centers[0][0] < w/2 and centers[0][1] > h/2):
         #BOTTOM LEFT
+        #set to pi/2 rads
+        bus.write_i2c_block_data(address, 0, listAscii) 
         pass;
     elif(centers[0][0] > w/2 and centers[0][1] < h/2):
         #TOP RIGHT
+        #set to pi rads
+        bus.write_i2c_block_data(address, 0, listAscii) 
         pass;
     elif(centers[0][0] > w/2 and centers[0][1] > h/2):
         #BOTTOM RIGHT
+        #set to 3pi/2 rads
+        bus.write_i2c_block_data(address, 0, listAscii) 
         pass;
     #(ABOVE) SEND SETPOINT TO ARDUINO
+    
+    pos = 69;
+    bus.write_i2c_block_data(address, 0, listAscii)
     #SEND REQUEST TO ARDUINO FOR POS
+    
+    lcd.clear();
+    lcd.message = "Current Position: " + str(pos);
     #SET LCD DISPLAY TO SHOW POS
         
 cv2.destroyAllWindows();
