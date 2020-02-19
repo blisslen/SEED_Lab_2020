@@ -97,5 +97,21 @@ while True:
             print("Detected markers with ID's : ",ids[:,0]);
         #except:
             #print("No IDs detected.");
+    (w,h) = pic.shape();
+    if(centers[0][0] < w/2 and centers[0][1] < h/2):
+        #TOP LEFT? IDK, near 0,0, which could be top or bottom left depending on their convention
+        pass;
+    elif(centers[0][0] < w/2 and centers[0][1] > h/2):
+        #BOTTOM LEFT
+        pass;
+    elif(centers[0][0] > w/2 and centers[0][1] < h/2):
+        #TOP RIGHT
+        pass;
+    elif(centers[0][0] > w/2 and centers[0][1] > h/2):
+        #BOTTOM RIGHT
+        pass;
+    #(ABOVE) SEND SETPOINT TO ARDUINO
+    #SEND REQUEST TO ARDUINO FOR POS
+    #SET LCD DISPLAY TO SHOW POS
         
 cv2.destroyAllWindows();
