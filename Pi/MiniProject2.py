@@ -12,30 +12,17 @@ import busio
 import board
 import adafruit_character_lcd.character_lcd_rgb_i2c as character_lcd
 
-#function to read a value from an address 
-def readNumber():     
-	try:         
-		number = bus.read_byte(address)         
-		# number = bus.read_byte_data(address, 1)         
-		return number     
-		#when a cable gets disconnected, it will display an IO error 
-    except IOError:         
-		print ("P-please put it b-back in, Sempai!")         
-		lcd.message = str("Error 404 ~ UwU")[::-1] 
+#function to write a value to a certain address 
+def writeNumber(value):     
+	bus.write_byte(myAddr, value)
+	# bus.write_byte_data(address, 0, value)     
+	return -1
 
-"""
-#function to write a string to an array block 
-def writeBlock(inputString):     
-	listAscii = []     
-	for x in inputString:         
-		listAscii.append(ord(x))     
-	  
-	
-#function to read the data from a block from a certain address 
-def readBlock():     
-    data = bus.read_i2c_block_data(address, 0, 32)     
-    return data 
-"""
+#function to write a value to a certain address 
+def writeNumber(value):     
+	bus.write_byte(myAddr, value) 
+	# bus.write_byte_data(address, 0, value)     
+	return -1 
 
 def takePic(saveFile, fileLoc):
     camera = PiCamera();
@@ -139,27 +126,22 @@ while True:
     if(centers[0][0] < w/2 and centers[0][1] < h/2):
         #TOP LEFT? IDK, near 0,0, which could be top or bottom left depending on their convention
         #set to 0 rads
-        bus.write_i2c_block_data(address, 0, listAscii) 
         pass;
     elif(centers[0][0] < w/2 and centers[0][1] > h/2):
         #BOTTOM LEFT
         #set to pi/2 rads
-        bus.write_i2c_block_data(address, 0, listAscii) 
         pass;
     elif(centers[0][0] > w/2 and centers[0][1] < h/2):
         #TOP RIGHT
         #set to pi rads
-        bus.write_i2c_block_data(address, 0, listAscii) 
         pass;
     elif(centers[0][0] > w/2 and centers[0][1] > h/2):
         #BOTTOM RIGHT
         #set to 3pi/2 rads
-        bus.write_i2c_block_data(address, 0, listAscii) 
         pass;
     #(ABOVE) SEND SETPOINT TO ARDUINO
     
     pos = 69;
-    bus.write_i2c_block_data(address, 0, listAscii)
     #SEND REQUEST TO ARDUINO FOR POS
     
     lcd.clear();
