@@ -1,3 +1,15 @@
+#include <Wire.h>
+
+
+//i2c handling
+#define ADDRESS 127 //device address
+#define HOST 69
+#define RESET 0 //reset position command
+#define NORTH 1
+#define EAST 2
+#define SOUTH 3
+#define WEST 4
+
 double CYCLE = 255;
 int ENABLE = 4; 
 int M1DIR = 7, M2DIR = 8, MOTOR1 = 9, MOTOR2 = 10;
@@ -23,6 +35,10 @@ double pi = 3.14159;
 bool turnUp = false;
 
 void setup() {
+  Wire.begin(ADDRESS); 
+  Wire.onRequest(handleRequest);
+  Wire.onReceive(handleCommand);
+  
   //Connect a switch between pin 4 and ground
   pinMode(SWITCH, INPUT_PULLUP);
   pinMode(ENABLE, OUTPUT);
@@ -98,4 +114,41 @@ void changeA(){
  else {
    count--;
  }
+}
+
+
+void handleRequest() {
+  while(1 < Wire.available()) { 
+    byte* posbytes = (byte*)&currPosition;
+    Wire.beginTransmission(HOST);
+    for(int i= 0; i < 4; i++) {
+      Wire.write(posbytes[i]);
+    }
+    Wire.endTransmission(HOST);
+  }
+}
+
+void handleCommand(int n) {
+  while(1 < Wire.available()) {
+    int cmd = Wire.read();
+    switch(cmd) {
+      case RESET: 
+        currPosition = 0;
+        destRads = 0;
+        lastPosition = 0
+        break;
+      case NORTH:
+        destRads = 0;
+        break;
+      case EAST:
+        destRads = PI/2;
+        break;
+      case SOUTH:
+        destRads = PI;
+        break;
+      case WEST:
+        destRads = 3*PI/2;
+        break;  
+    }
+  }
 }
