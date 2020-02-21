@@ -12,17 +12,17 @@ import busio
 import board
 import adafruit_character_lcd.character_lcd_rgb_i2c as character_lcd
 
+pos = 0;
+
 #function to write a value to a certain address 
 def writeNumber(value):     
 	bus.write_byte(myAddr, value)
 	# bus.write_byte_data(address, 0, value)     
 	return -1
 
-#function to write a value to a certain address 
-def writeNumber(value):     
-	bus.write_byte(myAddr, value) 
-	# bus.write_byte_data(address, 0, value)     
-	return -1 
+def readNumber():             
+	pos = bus.read_byte(address)                 
+	return number
 
 def takePic(saveFile, fileLoc):
     camera = PiCamera();
@@ -145,7 +145,7 @@ while True:
         pass;
     #(ABOVE) SEND SETPOINT TO ARDUINO
     
-    pos = readNumber;
+    readNumber();
     #SEND REQUEST TO ARDUINO FOR POS
     
     lcd.clear();
