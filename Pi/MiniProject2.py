@@ -21,7 +21,7 @@ def writeNumber(value):
 	return -1
 
 def readNumber():             
-	pos = bus.read_byte(address)                 
+	pos = bus.read_byte(myAddr)                 
 	return number
 
 def takePic(saveFile, fileLoc):
@@ -64,8 +64,12 @@ DEBUG PARAMETERS
 
 """
 
+iHaveAnLCD = True;
+
+I2C_is_real = False;
+
 writePicsToFile = False;
-displayPics = False;
+displayPics = True;
 showMarkersInDisplay = False;
 printoutMarkers = True;
 
@@ -75,14 +79,17 @@ myAddr = 0x45;
 lcd_columns = 16
 lcd_rows = 2
 
-# Initialise I2C bus.
-i2c = busio.I2C(board.SCL, board.SDA)
+bus = smbus.SMBus(1);
 
-# Initialise the LCD class
-lcd = character_lcd.Character_LCD_RGB_I2C(i2c, lcd_columns, lcd_rows)
-
-# Print two line message right to left
-lcd.text_direction = lcd.RIGHT_TO_LEFT
+if(iHaveAnLCD):
+    # Initialise I2C bus.
+    i2c = busio.I2C(board.SCL, board.SDA)
+    
+    # Initialise the LCD class
+    lcd = character_lcd.Character_LCD_RGB_I2C(i2c, lcd_columns, lcd_rows)
+    
+    # Print two line message right to left
+    lcd.text_direction = lcd.LEFT_TO_RIGHT
 
 """
 
@@ -98,15 +105,48 @@ while True:
     #Probably don't need to greyscale it, idk why tf they made us in the assignment
     
     corners, ids, rejectedImgPoints = aruco.detectMarkers(pic, aruco_dict, parameters = parameters);
-    centers = getCenters(corners);
-    if(not ids is None):
     
-    try:
-        pass;
-        print(corners[0].shape)
-        #print(corners.shape);
-    except:
-        pass;
+    if(not ids is None):
+        centers = getCenters(corners);
+        theShape = pic.shape;
+        print(theShape);
+        if(centers[0][0] < theShape[1]/2 and centers[0][1] < theShape[0]/2):
+            #TOP LEFT? IDK, near 0,0, which could be top or bottom left depending on their convention
+            #set to 0 rads
+            if(I2C_is_real):
+                writeNumber(1);
+            else:
+    	          print("Setting to 0 rads");
+        elif(centers[0][0] < theShape[1]/2 and centers[0][1] > theShape[0]/2):
+            #BOTTOM LEFTx
+            #set to pi/2 rads
+            if(I2C_is_real):
+                writeNumber(2);
+            else:
+    	          print("Setting to pi/2 rads");
+            #pass;
+        elif(centers[0][0] > theShape[1]/2 and centers[0][1] < theShape[0]/2):
+            #TOP RIGHT
+            #set to pi rads
+            if(I2C_is_real):
+                writeNumber(3);
+            else:
+    	          print("Setting to pi rads");
+            #pass;
+        elif(centers[0][0] > theShape[1]/2 and centers[0][1] > theShape[0]/2):
+            #BOTTOM RIGHT
+            #set to 3pi/2 rads
+            if(I2C_is_real):
+                writeNumber(4);
+            else:
+    	          print("Setting to 3pi/2 rads");
+            #pass;
+        #(ABOVE) SEND SETPOINT TO ARDUINO
+        try:
+            print(corners[0].shape)
+            #print(corners.shape);
+        except:
+            pass;
     if(showMarkersInDisplay):
         pic = aruco.drawDetectedMarkers(pic, rejectedImgPoints, borderColor=(100,0,240));
         pic = aruco.drawDetectedMarkers(pic, corners);
@@ -122,34 +162,13 @@ while True:
             print("Detected markers with ID's : ",ids[:,0]);
         #except:
             #print("No IDs detected.");
-    (w,h) = pic.shape();
-    if(centers[0][0] < w/2 and centers[0][1] < h/2):
-        #TOP LEFT? IDK, near 0,0, which could be top or bottom left depending on their convention
-        #set to 0 rads
-	writeNumber(0);
-        pass;
-    elif(centers[0][0] < w/2 and centers[0][1] > h/2):
-        #BOTTOM LEFT
-        #set to pi/2 rads
-	writeNumber(1);
-        pass;
-    elif(centers[0][0] > w/2 and centers[0][1] < h/2):
-        #TOP RIGHT
-        #set to pi rads
-	writeNumber(2);
-        pass;
-    elif(centers[0][0] > w/2 and centers[0][1] > h/2):
-        #BOTTOM RIGHT
-        #set to 3pi/2 rads
-	writeNumber(3);
-        pass;
-    #(ABOVE) SEND SETPOINT TO ARDUINO
     
-    readNumber();
+    if(I2C_is_real):
+        readNumber();
     #SEND REQUEST TO ARDUINO FOR POS
-    
-    lcd.clear();
-    lcd.message = "Current Position: " + str(pos);
+    if(iHaveAnLCD):
+        lcd.clear();
+        lcd.message = "Current Position\n: " + str(pos);
     #SET LCD DISPLAY TO SHOW POS
         
 cv2.destroyAllWindows();
