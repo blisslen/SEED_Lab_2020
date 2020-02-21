@@ -135,7 +135,7 @@ void handleCommand(int n) {
       case RESET: 
         currPosition = 0;
         destRads = 0;
-        lastPosition = 0
+        lastPosition = 0;
         break;
       case NORTH:
         destRads = 0;
