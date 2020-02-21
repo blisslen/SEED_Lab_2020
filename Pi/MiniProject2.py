@@ -126,22 +126,26 @@ while True:
     if(centers[0][0] < w/2 and centers[0][1] < h/2):
         #TOP LEFT? IDK, near 0,0, which could be top or bottom left depending on their convention
         #set to 0 rads
+	writeNumber(0);
         pass;
     elif(centers[0][0] < w/2 and centers[0][1] > h/2):
         #BOTTOM LEFT
         #set to pi/2 rads
+	writeNumber(1);
         pass;
     elif(centers[0][0] > w/2 and centers[0][1] < h/2):
         #TOP RIGHT
         #set to pi rads
+	writeNumber(2);
         pass;
     elif(centers[0][0] > w/2 and centers[0][1] > h/2):
         #BOTTOM RIGHT
         #set to 3pi/2 rads
+	writeNumber(3);
         pass;
     #(ABOVE) SEND SETPOINT TO ARDUINO
     
-    pos = 69;
+    pos = readNumber;
     #SEND REQUEST TO ARDUINO FOR POS
     
     lcd.clear();
