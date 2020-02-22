@@ -6,12 +6,17 @@ https://raspberrypi.stackexchange.com/questions/22975/custom-white-balancing-wit
 import picamera
 import picamera.array
 import numpy as np
+from time import sleep
+
+rg, bg = (0.5, 0.5)
+
+print("Place a white piece of paper or something similar in front of the camera. Whitebalance will start in 5 seconds.");
+sleep(5);
 
 with picamera.PiCamera() as camera:
     camera.resolution = (1280, 720)
     camera.awb_mode = 'off'
     # Start off with ridiculously low gains
-    rg, bg = (0.5, 0.5)
     camera.awb_gains = (rg, bg)
     with picamera.array.PiRGBArray(camera, size=(128, 72)) as output:
         # Allow 30 attempts to fix AWB
@@ -37,3 +42,5 @@ with picamera.PiCamera() as camera:
             camera.awb_gains = (rg, bg)
             output.seek(0)
             output.truncate()
+print("Your final whitebalance values are: RG=",rg," BG=",bg);
+print("Press any key to exit when you're done.");
