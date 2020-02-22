@@ -26,6 +26,8 @@ def readNumber():
 
 def takePic(saveFile, fileLoc):
     camera = PiCamera();
+    camera.awb_mode = 'off';
+    camera.awb_gains = (rg, bg);
     rawCapture = PiRGBArray(camera);
     time.sleep(0.1);
     try:
@@ -63,6 +65,10 @@ def getCenters(corners):
 DEBUG PARAMETERS
 
 """
+
+#Whitebalance
+rg = 0.5;
+rb = 0.5;
 
 iHaveAnLCD = True;
 
