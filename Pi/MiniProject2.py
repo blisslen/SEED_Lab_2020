@@ -20,16 +20,26 @@ def writeNumber(value):
 	# bus.write_byte_data(address, 0, value)     
 	return -1
 
-def readNumber():             
-	pos = bus.read_byte(myAddr)                 
-	return number
+def readNumber():
+        global pos
+        """
+        counts = np.array(bus.read_i2c_block_data(myAddr,0,4),dtype=np.uint8);
+        print(counts);
+        count = counts.view(dtype=np.uint32);
+        print(count);     
+        pos = float(count) / (6400.0*np.pi);
+        """
+        rotation = bus.read_byte(myAddr);
+        print(rotation)
+        pos = (float(rotation) * ((2.0*np.pi) / 255.0))
+        return;
 
 def takePic(saveFile, fileLoc):
     camera = PiCamera();
     camera.awb_mode = 'off';
     camera.awb_gains = (rg, bg);
     rawCapture = PiRGBArray(camera);
-    time.sleep(0.1);
+    time.sleep(0.05);
     try:
         camera.capture(rawCapture, format="bgr");
         image = rawCapture.array;
@@ -67,17 +77,19 @@ DEBUG PARAMETERS
 """
 
 #Whitebalance
-rg = 0.5;
-rb = 0.5;
+rg = 3.0;
+#rg = 1.0;
+bg = 3.5;
+#bg = 0.5;
 
 iHaveAnLCD = True;
 
-I2C_is_real = False;
+I2C_is_real = True;
 
 writePicsToFile = False;
-displayPics = True;
+displayPics = False;
 showMarkersInDisplay = False;
-printoutMarkers = True;
+printoutMarkers = False;
 
 myAddr = 0x45;
 
@@ -175,6 +187,9 @@ while True:
     if(iHaveAnLCD):
         lcd.clear();
         lcd.message = "Current Position\n: " + str(pos);
+    else:
+        pass
+        print(str(pos));
     #SET LCD DISPLAY TO SHOW POS
         
 cv2.destroyAllWindows();
