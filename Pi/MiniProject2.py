@@ -1,3 +1,49 @@
+"""
+SEED Lab Mini Project 1
+======================================
+
+This segment of code completes the tasks set forth in SEED Lab's
+Mini Project 1.
+
+This project uses opencv's aruco markers, detecting a marker located within the camera's visual range. When detected, the center of 
+this marker is found, and the quadrant that marker lies within. That quadrant is then used to send one of four possible setpoints to
+the arduino via I2C, commanding it to rotate a wheel through its code, to a specified angle.
+
+The pi also requests positions from the Arduino, displaying the positions recieved, in radians, to the connected LCD.
+
+This code is to be used in tandem with an Arduino, connected via I2C, an LCD, also connected via I2C, and a camera installed,
+within the port located on the pi itself.
+
+Look how easy it is to use:
+
+    Ensure all required libraries are installed.
+    Ensure code is being ran on a raspberry pi, with camera module installed.
+    Ensure all hardware is connected properly, and, for the Arduino, programmed properly as well.
+    Execute the code in idle/spyder/terminal/etc.
+    
+Features
+--------
+
+- Solves the problems
+- Gets us credit for doing the assignment in the class
+- Use of computervision library to detect markers
+- Calculations to determine the centerpoint of markers
+- Successful communication between Pi and Arduino, for both reading and writing
+- Successful communication with an LCD to display data
+
+Author
+------
+
+Hunter Bliss, Dat Truong
+SEED Lab
+Team 1
+Section A
+
+Updates:
+--------
+Last Updated: 2/26/2020
+"""
+
 # import the necessary packages
 from picamera.array import PiRGBArray
 from picamera import PiCamera
