@@ -65,7 +65,7 @@ def writeNumber(value):
 	bus.write_byte(myAddr, value)
 	# bus.write_byte_data(address, 0, value)     
 	return -1
-
+#function to read a value from the arduino and turn it into radians
 def readNumber():
         global pos
         """
